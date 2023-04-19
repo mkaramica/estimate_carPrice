@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vehicle Information</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/results.css') }}">
+  </head>
+  <body>
+    <div class="container mt-4">
+      <button
+        type="reset"
+        class="btn btn-secondary mb-3"
+        onclick="goBack()"
+      >
+        Go Back to the Search Page
+      </button>
+      <h4 style="border-top: 1px solid black; text-align: center">
+        Your Requested Vehicle
+      </h4>
+      <table class="table table-bordered table-left">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col">Year</th>
+            <th scope="col">Make</th>
+            <th scope="col">Model</th>
+            <th scope="col">Mileage</th>
+          </tr>
+        </thead>
+        <tbody class="table-success">
+          <tr>
+            <td>{{target_case['year']}}</td>
+            <td>{{target_case['make']}}</td>
+            <td>{{target_case['model']}}</td>
+            <td>
+			{% if target_case['mileage'] %}
+				{{ target_case['mileage'] }} Miles
+			{% else %}
+				Not Given
+		    {% endif %}
+			</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="price-table">
+        <tbody>
+          <tr>
+            <td>Estimated Price</td>
+            <td>${{ estimated_price }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <h4 style="border-top: 1px solid black; text-align: center">
+        Queried Cases
+      </h4>
+      <table class="table table-bordered table-left table-striped">
+        <thead class="table-primary">
+          <tr>
+			<th>#</th>
+            <th>Vehicle</th>
+            <th>Price</th>
+            <th>Mileage</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+		{% for record_dict in record_dicts %}
+          <tr>
+			<td>{{ loop.index }}</td>
+            <td>{{record_dict["year"]}} {{record_dict["make"]}} {{record_dict["model"]}}</td>
+            <td>${{record_dict["price"]}}</td>
+            <td>{{record_dict["mileage"]}} Miles</td>
+            <td>{{record_dict["city"]}}, {{record_dict["state"]}}</td>
+          </tr>
+		  {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+	<script>
+		function goBack() {
+			window.location.href = window.location.pathname;
+		  }
+	</script>
+  </body>
+</html>

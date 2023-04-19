@@ -1,0 +1,103 @@
+.container {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  width: 40%;
+  margin-left: 0;
+}
+/*
+.table-left {
+  margin-left: 0;
+}
+
+.table th,
+.table td {
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.col-year {
+  width: 10%;
+}
+
+.col-make {
+  width: 25%;
+}
+
+.col-model {
+  width: 30%;
+}
+
+.col-mileage {
+  width: 35%;
+}
+
+.table th {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #007bff;
+  border-color: #dee2e6;
+  background-color: #f8f9fa;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.table td {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #495057;
+  border-color: #dee2e6;
+  text-align: center;
+}
+
+*/
+.price-table {
+  background-color: #FFF3CD;
+  color: #3C3C3C;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 2rem auto;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.price-table td {
+  padding: 1rem;
+  text-align: center;
+}
+
+.price-table tbody tr:nth-child(odd) {
+  background-color: #FAE7B5;
+}
+
+.price-table tbody tr:hover {
+  background-color: #EFD040;
+}
+
+.price-table td:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.price-table td:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.price-table th {
+  background-color: #FFD966;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #3C3C3C;
+  padding: 1rem;
+  border-bottom: 2px solid #fff;
+}
+
+.price-table th:first-child {
+  border-radius: 10px 0 0 0;
+}
+
+.price-table th:last-child {
+  border-radius: 0 10px 0 0;
+}
+

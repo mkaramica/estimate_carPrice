@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Search Page</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/index.css') }}">
+
+  </head>
+  <body>
+    <div class="d-flex flex-column align-items-center justify-content-center">
+      <h1 class="mb-4">{{message}}</h1>
+	  <form class="text-center">
+        <h1 class="mb-4">Vehicle Information</h1>
+		<div class="form-group">
+		<label for="info_input_type">Enter Information as ...</label><br>
+			<input type="radio" id="one-line-option" name="info_input_type" value="one-line" checked>
+			<label for="one-line">One Combined Line</label><br>
+			<input type="radio" id="separated-fields-option" name="info_input_type" value="separated-fields">
+			<label for="separated-fields">Separated Fields</label><br>
+		</div>
+
+
+		<div class="form-group" id="one-line-show">		  
+          <label for="year_make_model"
+            >Year Make Model* [Required]</label
+          >
+          <input id="year_make_model" name="year_make_model" class="form-control" value="">		  
+        </div>
+		
+        <div class="form-group" id="separated-fields-show" style="display: none;">		  
+          <label for="year"
+            >Year* [Required]</label
+          >
+          <input type="number" id="year" name="year" class="form-control" min="1900" max="2024" value="">
+		  <label for="make"
+            >Make* [Required]</label
+          >
+          <input id="make" name="make" class="form-control" value="">
+		  <label for="model"
+            >Model* [Required]</label
+          >
+          <input id="model" name="model" class="form-control" value="">
+		  
+        </div>
+        <div class="form-group">
+          <label for="mileage">Mileage [Optional]</label>
+          <input type="text" id="mileage" name="mileage" class="form-control" value="" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">
+          Submit
+        </button>
+      </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+		const oneLineRadio = document.getElementById("one-line-option");
+		const separatedFieldsRadio = document.getElementById("separated-fields-option");
+		const oneLineContainer = document.getElementById("one-line-show");
+		const separatedFieldsContainer = document.getElementById("separated-fields-show");
+		
+		oneLineRadio.addEventListener("click", function() {
+		  oneLineContainer.style.display = "block";
+		  separatedFieldsContainer.style.display = "none";
+		});
+		
+		separatedFieldsRadio.addEventListener("click", function() {
+		  oneLineContainer.style.display = "none";
+		  separatedFieldsContainer.style.display = "block";
+		});
+    </script>
+  </body>
+</html>
