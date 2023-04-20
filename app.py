@@ -1,191 +1,290 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 import mysql.connector
+from dotenv import load_dotenv
 import time
-
-#db_stored_name = "vin100k"
-db_stored_name = "vinaudit_database"
-
-
-def timer_decorator(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        print(f"Execution time: {(end_time - start_time):6f} sec.")
-        return result
-    return wrapper
-
-def connect_to_database():
-    vinaudit_db = mysql.connector.connect(
-        host="localhost",
-        user="mk",
-        password="admin"
-    )
-    return vinaudit_db
-
-
-def estimate_price(target_mileage, price_list,mileage_list):
-    target_mileage = int(target_mileage)
-    mean_mileage = sum(mileage_list) / len(mileage_list)
-    mean_price = sum(price_list) / len(price_list)
-    
-    # Calculate the numerator and denominator of the slope equation
-    numerator = sum([(mileage - mean_mileage) * (price - mean_price) for mileage, price in zip(mileage_list, price_list)])
-    denominator = sum([(mileage - mean_mileage) ** 2 for mileage in mileage_list])
-    
-    slope = numerator / denominator
-    y_intercept = mean_price - slope * mean_mileage
-    
-    estimated_price = slope * target_mileage + y_intercept
-    estimated_price = round(estimated_price/100) * 100
-    
-    return estimated_price
-
-@timer_decorator
-def find_similarCases(db, db_stored_name, target_case):
-    requested_makeModel = target_case['makeModel']
-    requested_year = target_case['year']
-    requested_make = target_case['make']
-    requested_model = target_case['model']
-    requested_mileage = target_case['mileage']
-    
-    mycursor = db.cursor()
-    mycursor.execute(f"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '{db_stored_name}'")
-    dbExists = mycursor.fetchone()
-    
-    if not dbExists:
-        print(f"Warning! Data base '{db_stored_name}' does not exist!")
-        print("*"*80)
-        return None
-    
-    mycursor.execute(f"USE {db_stored_name}")
-    
-    
-    if requested_makeModel:
-        sql_makeModel = f"CONCAT(make, ' ', model) = '{requested_makeModel}' " 
-    else:
-        sql_makeModel = f"make = '{requested_make}' AND model = '{requested_model}' "
-        
-    
-    
-    if requested_mileage:
-        sql_command = f"SELECT year, make, model, price, mileage, city, state, ABS(mileage - {requested_mileage}) as diff_mileage FROM cars "
-        sql_command += f"WHERE price IS NOT NULL AND "
-        sql_command += f"mileage IS NOT NULL AND "
-        sql_command += f"year = {requested_year} AND "
-        sql_command += sql_makeModel
-        sql_command += "ORDER BY diff_mileage LIMIT 100"
-    else:
-        sql_command = f"SELECT AVG(price) AS price_avg FROM cars "
-        sql_command += f"WHERE price IS NOT NULL AND "
-        sql_command += f"year = {requested_year} AND "
-        sql_command += sql_makeModel
-        
-        mycursor.execute(sql_command)
-        records = mycursor.fetchall()
-        print(records)
-        if len(records) == 0 or records[0][0] == None:
-            record_dicts = None
-            estimated_price = None
-            return record_dicts, estimated_price
-        
-        estimated_price = round(int(records[0][0])/100) * 100
-        #---------------------------------------------------
-        sql_command = f"SELECT year, make, model, price, mileage, city, state, ABS(price - {estimated_price}) as diff_price FROM cars "
-        sql_command += f"WHERE price IS NOT NULL AND "
-        sql_command += f"year = {requested_year} AND "
-        sql_command += sql_makeModel
-        sql_command += "ORDER BY diff_price LIMIT 100"
-
-    
-    
-    mycursor.execute(sql_command)
-    records = mycursor.fetchall()
-    
-    if len(records) == 0:
-        record_dicts = None
-        estimated_price = None
-        return record_dicts, estimated_price
-        
-     
-    record_dicts = [
-    {
-      'year':  record[0],
-      'make': record[1],
-      'model': record[2],
-      'price':  record[3],
-      'mileage':  record[4],
-      'city':  record[5],
-      'state':  record[6]
-    } 
-    for record in records] 
-    
-    target_case['make'] = target_case['make'] or record_dicts[0]['make']
-    target_case['model'] = target_case['model'] or record_dicts[0]['model']
-    
-    
-    if requested_mileage:
-        price_list = [int(record[3]) for record in records]
-        mileage_list = [int(record[4]) for record in records]
-        
-        estimated_price = estimate_price(requested_mileage, price_list,mileage_list)   
-        estimated_price = round(estimated_price / 100) * 100
-
-
-    return record_dicts, estimated_price
-    
+import os
 
 
 app = Flask(__name__)
 
+def timer_decorator(func):
+    """
+    Returns the execution time for any arbitrary function.
+    This decorator returns the execution time for any given function .
+    This is especially useful to compare the performance of column indexing when executing queries on the large databases.
+    """
+    
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        print("*"*30)
+        print(f"Execution time: {(end_time - start_time):6f} sec.")
+        print("*"*30)
+        return result
+    return wrapper
+
+
+class PriceEstimation:
+    """
+    Estimates the price of a used car based on its features.
+    This class provides required funciton(s) for estimating the price of a given car.
+    Different methods, including linear regression and machine learning approaches can be placed here.
+    It is recommended to decorate the funcitons with @staticmethod decorator to make it easy to use them.
+    """
+    
+    @staticmethod
+    def linearReg(target_mileage, price_list,mileage_list):
+        """
+        Estimates price by utilizing 1-D linear regression approach.
+        """
+        target_mileage = int(target_mileage)
+        mean_mileage = sum(mileage_list) / len(mileage_list)
+        mean_price = sum(price_list) / len(price_list)
+        
+        # Calculate the numerator and denominator of the slope equation
+        numerator = sum([(mileage - mean_mileage) * (price - mean_price) for mileage, price in zip(mileage_list, price_list)])
+        denominator = sum([(mileage - mean_mileage) ** 2 for mileage in mileage_list])
+        
+        slope = numerator / denominator
+        y_intercept = mean_price - slope * mean_mileage
+        
+        estimated_price = slope * target_mileage + y_intercept
+        estimated_price = round(estimated_price/100) * 100
+        
+        return estimated_price
+
+
+class DatabaseController:
+    """
+    Handles everything about the database.
+    All database operations are carried out by this class;
+    Including authentication, connection, disconnection, and query execution.
+    """
+    def __init__(
+        self, 
+        db_name=None, 
+        host=None, 
+        user=None, 
+        password=None
+    ):
+    
+        load_dotenv()
+        
+        self.db_name = db_name or os.getenv('DB_NAME')
+        self.db_host = host or os.getenv('DB_HOST')
+        self.db_user = user or os.getenv('DB_USER')
+        self.db_password = password or os.getenv('DB_PASSWORD')
+        self.connection = None
+
+
+    def connect(self):
+        self.connection = mysql.connector.connect(
+            host=self.db_host,
+            user=self.db_user,
+            password=self.db_password,
+            database=self.db_name
+        )
+        
+       
+    def disconnect(self):
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+
+    @timer_decorator
+    def execute_query(self, target_case):
+        
+        cursor = self.connection.cursor()
+       
+        if target_case["makeModel"]:
+            sql_makeModel = "CONCAT(make, ' ', model) = %(makeModel)s " 
+        else:
+            sql_makeModel = "make = %(make)s AND model= %(model)s "
+       
+       
+        if target_case["mileage"]:
+            sql_query = "SELECT year, make, model, price, mileage, city, state, \
+                ABS(mileage - %(mileage)s) as diff_mileage FROM cars \
+                WHERE price IS NOT NULL AND mileage IS NOT NULL AND \
+                year= %(year)s AND "  + sql_makeModel +  "ORDER BY diff_mileage LIMIT %(max_records)s"
+        else:
+            sql_query = "SELECT AVG(price) FROM cars WHERE price IS NOT NULL AND \
+                year= %(year)s AND " + sql_makeModel
+
+            cursor.execute(sql_query, target_case)
+            query_result = cursor.fetchall()
+            
+            if query_result[0][0] == None:
+                cursor.close()
+                return {'estimated_price': None, 'searched_cars': None}
+            
+            estimated_price = round(int(query_result[0][0])/100) * 100
+            
+            sql_query = f"SELECT year, make, model, price, mileage, city, state, \
+                ABS(price - '{estimated_price}') as diff_price FROM cars WHERE price IS NOT NULL AND \
+                year= %(year)s AND "  + sql_makeModel +  "ORDER BY diff_price LIMIT %(max_records)s" 
+            
+            
+
+        cursor.execute(sql_query, target_case)
+        query_result = cursor.fetchall()
+        cursor.close()
+        
+        if query_result[0][0] == None:
+                return {'estimated_price': None, 'searched_cars': None}
+                
+        
+        searched_cars = [
+        {
+          'year':  record[0],
+          'make': record[1],
+          'model': record[2],
+          'price':  record[3],
+          'mileage':  record[4],
+          'city':  record[5],
+          'state':  record[6]
+        } 
+        for record in query_result] 
+        
+        
+        if target_case['mileage']:
+            price_list = [int(record[3]) for record in query_result]
+            mileage_list = [int(record[4]) for record in query_result]
+            
+            estimated_price = PriceEstimation.linearReg(target_case['mileage'], price_list,mileage_list)   
+            estimated_price = round(estimated_price / 100) * 100
+            
+            
+        return {'estimated_price': estimated_price, 'searched_cars': searched_cars}
+        
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
+
+class WebApp:
+    def __init__(
+        self, 
+        db_name=None, 
+        host=None, 
+        user=None, 
+        password=None
+    ):
+    
+        self.db_controller = DatabaseController(
+            db_name=db_name,
+            host=host,
+            user=user,
+            password=password
+        )
+        
+    
+    def validate_request(self, requestArgs):
+        requested_yearMakeModel = requestArgs.get('year_make_model')
+        requested_year = requestArgs.get('year')
+        requested_make = requestArgs.get('make')
+        requested_model = requestArgs.get('model')
+        requested_mileage = requestArgs.get('mileage')
+        
+        if not ( requested_yearMakeModel or
+        (requested_year and requested_make and requested_model)):
+            self.target_case = None
+            self.warning_message = "Please enter the required items!"
+            return
+
+            
+        
+        requested_makeModel = ''
+        
+        if requested_yearMakeModel:
+            splitInput = requested_yearMakeModel.split(" ")
+            if (len(splitInput) < 3) or (not splitInput[0].isnumeric()):
+                self.target_case = None 
+                self.warning_message = "Wrong input!"
+                return
+            
+            requested_year = splitInput[0]
+            requested_makeModel = " ".join(splitInput[1:])
+            
+
+        self.target_case = {
+            'makeModel': requested_makeModel,
+            'year': requested_year,
+            'make': requested_make,
+            'model': requested_model,
+            'mileage': requested_mileage,
+            'max_records': 
+                int(requestArgs.get('max_records')) \
+                if ( 
+                    requestArgs.get('max_records') and
+                    requestArgs.get('max_records').isnumeric()
+                )
+                else 100
+        }
+            
+        self.warning_message = "All good!"
+        return
+        
+          
+    
+    def perform_query(self):
+        with self.db_controller as db:
+            query_results = db.execute_query(self.target_case)
+            
+        
+        if query_results['estimated_price'] and \
+           query_results['searched_cars']:
+                   
+            self.estimated_price =  query_results['estimated_price']
+            self.searched_cars = query_results['searched_cars']
+            
+            if self.target_case['makeModel']:
+                self.target_case['make'] = self.searched_cars[0]['make']
+                self.target_case['model'] = self.searched_cars[0]['model']
+            
+            return 
+
+
+        self.estimated_price = None
+        self.searched_cars = None
+        self.warning_message = "No record found!"
+        return
+        
+    
+    
+    def run(self):
+        app.run(debug=False)
+        
+
+web_app = WebApp()
+
 @app.route('/', methods=['GET'])
 def index():
-    requested_yearMakeModel = request.args.get('year_make_model')
-    requested_year = request.args.get('year')
-    requested_make = request.args.get('make')
-    requested_model = request.args.get('model')
-    requested_mileage = request.args.get('mileage')
+    web_app.validate_request(request.args)
     
-    if not ( requested_yearMakeModel or
-    (requested_year and requested_make and requested_model)):
-        message = "Please enter the required items!"
-        return render_template('index.html', message = message)
-        
-    
-    requested_makeModel = ''
-    
-    if requested_yearMakeModel:
-        splitInput = requested_yearMakeModel.split(" ")
-        if (len(splitInput) < 3) or (not splitInput[0].isnumeric()):
-            message = "Wrong input!"
-            return render_template('index.html', message = message)
-        
-        requested_year = splitInput[0]
-        requested_makeModel = " ".join(splitInput[1:])
-        
+    if web_app.target_case:
+        web_app.perform_query()
+        if web_app.estimated_price and\
+            web_app.searched_cars:
+            
+            return render_template(
+                'results.html', 
+                target_case = web_app.target_case,
+                estimated_price = web_app.estimated_price,
+                record_dicts = web_app.searched_cars
+                )
 
-    target_case = {
-        'makeModel': requested_makeModel,
-        'year': requested_year,
-        'make': requested_make,
-        'model': requested_model,
-        'mileage': requested_mileage
-    }
-    
-    
-    with connect_to_database() as vinaudit_db:
-        record_dicts, estimated_price = find_similarCases(vinaudit_db, db_stored_name, target_case)
-        
-    
-    if not (record_dicts and estimated_price):
-        message = "No record found!"
-        return render_template('index.html', message = message)
-    
-    return render_template('results.html', 
-                           target_case = target_case,
-                           estimated_price = estimated_price,
-                           record_dicts = record_dicts)
-        
+    return render_template(
+        'index.html', 
+        message = web_app.warning_message
+    )
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    web_app.run()
