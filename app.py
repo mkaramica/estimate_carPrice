@@ -1,3 +1,5 @@
+# Author: Mahdi Karami; email: mahdi.karami.ca@gmail.com
+
 from flask import Flask, render_template, request
 import mysql.connector
 from dotenv import load_dotenv
@@ -69,10 +71,10 @@ class DatabaseController:
         password=None
     ):
     
-    """
-    Authentication setup for the databse.
-    The information are stored in a .env file and retrieved as environmental variables.
-    """
+        """
+        Authentication setup for the databse.
+        The information are stored in a .env file and retrieved as environmental variables.
+        """
         
         load_dotenv()
         
