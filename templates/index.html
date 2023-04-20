@@ -12,7 +12,15 @@
   </head>
   <body>
     <div class="d-flex flex-column align-items-center justify-content-center">
-      <h1 class="mb-4">{{message}}</h1>
+      <button
+        type="reset"
+        class="btn btn-secondary mb-3"
+        onclick="goBack()"
+      >
+        Clear URL
+      </button>
+	  
+	  <h1 class="mb-4">{{message}}</h1>
 	  <form class="text-center">
         <h1 class="mb-4">Vehicle Information</h1>
 		<div class="form-group">
@@ -48,7 +56,9 @@
         </div>
         <div class="form-group">
           <label for="mileage">Mileage [Optional]</label>
-          <input type="text" id="mileage" name="mileage" class="form-control" value="" />
+          <input type="number" id="mileage" name="mileage" class="form-control" value="" />
+		  <label for="max_records">Maximum Number of Records [Optional]</label>
+          <input type="number id="max_records" name="max_records" class="form-control" min="1" max="1000" value="100" />
         </div>
         <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">
           Submit
@@ -74,6 +84,9 @@
 		  oneLineContainer.style.display = "none";
 		  separatedFieldsContainer.style.display = "block";
 		});
+		function goBack() {
+			window.location.href = window.location.pathname;
+		}
     </script>
   </body>
 </html>
