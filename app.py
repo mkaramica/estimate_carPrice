@@ -69,6 +69,11 @@ class DatabaseController:
         password=None
     ):
     
+    """
+    Authentication setup for the databse.
+    The information are stored in a .env file and retrieved as environmental variables.
+    """
+        
         load_dotenv()
         
         self.db_name = db_name or os.getenv('DB_NAME')
@@ -94,7 +99,9 @@ class DatabaseController:
 
     @timer_decorator
     def execute_query(self, target_case):
-        
+        """
+        Perform query excecution to find similar cars and the corresponding estimated price.
+        """
         cursor = self.connection.cursor()
        
         if target_case["makeModel"]:
@@ -160,15 +167,24 @@ class DatabaseController:
         
 
     def __enter__(self):
+        """
+        This dunder help open the class by 'with' statement.
+        """
         self.connect()
         return self
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        This dunder help open the class by 'with' statement.
+        """
         self.disconnect()
 
 
 class WebApp:
+    """
+    Controls workflow of the web application.
+    """
     def __init__(
         self, 
         db_name=None, 
@@ -177,6 +193,9 @@ class WebApp:
         password=None
     ):
     
+        """
+        Database initialization
+        """
         self.db_controller = DatabaseController(
             db_name=db_name,
             host=host,
@@ -186,6 +205,10 @@ class WebApp:
         
     
     def validate_request(self, requestArgs):
+        """
+        Validates the http request received by the class.
+        It then builds self.target_case and self.warning_message accordingly.
+        """
         requested_yearMakeModel = requestArgs.get('year_make_model')
         requested_year = requestArgs.get('year')
         requested_make = requestArgs.get('make')
@@ -199,7 +222,6 @@ class WebApp:
             return
 
             
-        
         requested_makeModel = ''
         
         if requested_yearMakeModel:
@@ -234,6 +256,9 @@ class WebApp:
           
     
     def perform_query(self):
+        """
+        Transfers the required query to the database, and gets the results.
+        """
         with self.db_controller as db:
             query_results = db.execute_query(self.target_case)
             
@@ -266,6 +291,9 @@ web_app = WebApp()
 
 @app.route('/', methods=['GET'])
 def index():
+    """
+    Receives the http request and renders an appropriate html content accordingly.
+    """
     web_app.validate_request(request.args)
     
     if web_app.target_case:
