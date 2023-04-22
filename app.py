@@ -113,7 +113,7 @@ class DatabaseController:
        
        
         if target_case["mileage"]:
-            sql_query = "SELECT year, make, model, price, mileage, city, state, \
+            sql_query = "SELECT year, make, model, trim, price, mileage, city, state, \
                 ABS(mileage - %(mileage)s) as diff_mileage FROM cars \
                 WHERE price IS NOT NULL AND mileage IS NOT NULL AND \
                 year= %(year)s AND "  + sql_makeModel +  "ORDER BY diff_mileage LIMIT %(max_records)s"
@@ -130,7 +130,7 @@ class DatabaseController:
             
             estimated_price = round(int(query_result[0][0])/100) * 100
             
-            sql_query = f"SELECT year, make, model, price, mileage, city, state, \
+            sql_query = f"SELECT year, make, model, trim, price, mileage, city, state, \
                 ABS(price - '{estimated_price}') as diff_price FROM cars WHERE price IS NOT NULL AND \
                 year= %(year)s AND "  + sql_makeModel +  "ORDER BY diff_price LIMIT %(max_records)s" 
             
@@ -149,17 +149,18 @@ class DatabaseController:
           'year':  record[0],
           'make': record[1],
           'model': record[2],
-          'price':  record[3],
-          'mileage':  record[4],
-          'city':  record[5],
-          'state':  record[6]
+          'trim': record[3],
+          'price':  record[4],
+          'mileage':  record[5],
+          'city':  record[6],
+          'state':  record[7]
         } 
         for record in query_result] 
         
         
         if target_case['mileage']:
-            price_list = [int(record[3]) for record in query_result]
-            mileage_list = [int(record[4]) for record in query_result]
+            price_list = [int(record[4]) for record in query_result]
+            mileage_list = [int(record[5]) for record in query_result]
             
             estimated_price = PriceEstimation.linearReg(target_case['mileage'], price_list,mileage_list)   
             estimated_price = round(estimated_price / 100) * 100

@@ -71,7 +71,11 @@
 		{% for record_dict in record_dicts %}
           <tr>
 			<td>{{ loop.index }}</td>
-            <td>{{record_dict["year"]}} {{record_dict["make"]}} {{record_dict["model"]}}</td>
+            <td>{{record_dict["year"]}} 
+				{{record_dict["make"]}} 
+				{{record_dict["model"]}}
+				{{record_dict["trim"]}}
+			</td>
             <td>${{record_dict["price"]}}</td>
             <td>{{record_dict["mileage"]}} Miles</td>
             <td>{{record_dict["city"]}}, {{record_dict["state"]}}</td>
